@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Gombak">
+<meta name="theme-color" content="#1a1a1a">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.svg">
+<title>Gombak Stocktake 2026</title>
+<style>*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;color:#1a1a1a;font-size:16px}
+.app{display:flex;flex-direction:column;height:100%;max-width:520px;margin:0 auto;background:#fff}
+.topbar{background:#1a1a1a;color:#fff;padding:12px 16px;padding-top:max(12px,env(safe-area-inset-top));display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.topbar-title{font-size:16px;font-weight:700;letter-spacing:-0.3px}
+.topbar-sub{font-size:12px;color:#aaa;margin-top:1px}
+.tab-row{display:flex;background:#fff;border-bottom:1px solid #e5e5e5;flex-shrink:0}
+.tab{flex:1;padding:8px 0;font-size:11px;font-weight:500;text-align:center;border:none;background:transparent;color:#888;cursor:pointer;border-bottom:2px solid transparent;line-height:1.3}
+.tab.active{color:#1a1a1a;border-bottom-color:#1a1a1a;font-weight:700}
+.screen{display:none;flex:1;flex-direction:column;overflow:hidden;min-height:0}
+.screen.active{display:flex}
+
+/* SCAN */
+.scan-input-wrap{padding:12px 16px 8px;flex-shrink:0}
+.scan-field{width:100%;height:52px;font-size:16px;padding:0 16px;border:2px solid #e5e5e5;border-radius:12px;background:#fafafa;color:#1a1a1a;outline:none;-webkit-appearance:none}
+.scan-field:focus{border-color:#1a1a1a;background:#fff}
+.scan-field.not-found{border-color:#ef4444;background:#fef2f2}
+.result-area{padding:0 16px 8px;flex-shrink:0}
+.result-card{border-radius:12px;padding:14px 16px}
+.result-card.found{background:#f0fdf4;border:2px solid #86efac}
+.result-card.notfound{background:#fef2f2;border:2px solid #fca5a5}
+.result-bc{font-size:11px;color:#6b7280;font-family:monospace;margin-bottom:2px}
+.result-name{font-size:16px;font-weight:700;color:#111;margin-bottom:2px;line-height:1.3}
+.result-size{font-size:12px;color:#2563eb;font-weight:600;margin-bottom:8px}
+.color-select-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:10px 12px;background:#fff;border-radius:10px;border:2px solid #e5e5e5;cursor:pointer}
+.color-select-row.color-chosen{border-color:#1a1a1a}
+.color-select-dot{width:24px;height:24px;border-radius:50%;border:2px solid #e5e5e5;flex-shrink:0;background:#f3f4f6}
+.color-select-label{flex:1;font-size:14px;font-weight:600;color:#6b7280}
+.color-select-label.chosen{color:#1a1a1a}
+.color-select-arrow{color:#9ca3af;font-size:12px}
+.color-options-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.color-options-row .color-select-row{flex:1;margin-bottom:0}
+.no-color-btn{height:44px;padding:0 14px;border-radius:10px;border:2px solid #e5e5e5;background:#fff;color:#6b7280;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;-webkit-appearance:none}
+.no-color-btn:active{background:#f3f4f6}
+.no-color-btn.active{background:#f3f4f6;border-color:#1a1a1a;color:#1a1a1a}
+.chosen-none{color:#6b7280!important}
+.color-required-hint{font-size:11px;color:#ef4444;font-weight:600;margin-bottom:8px;display:none}
+.color-required-hint.show{display:block}
+.result-price{font-size:13px;color:#6b7280;margin-bottom:10px}
+.qty-controls{display:flex;align-items:center;gap:8px}
+.qty-btn{width:48px;height:48px;border-radius:10px;border:2px solid #e5e5e5;background:#fff;font-size:24px;color:#1a1a1a;cursor:pointer;flex-shrink:0;-webkit-appearance:none}
+.qty-btn:active{background:#f3f4f6}
+.qty-input{width:72px;height:48px;border-radius:10px;border:2px solid #e5e5e5;background:#fff;font-size:20px;font-weight:700;text-align:center;color:#1a1a1a;outline:none;-webkit-appearance:none}
+.qty-input:focus{border-color:#1a1a1a}
+.save-btn{flex:1;height:48px;border-radius:10px;border:none;background:#1a1a1a;color:#fff;font-size:14px;font-weight:700;cursor:pointer;-webkit-appearance:none}
+.save-btn:active{opacity:0.8}
+.save-btn.saved{background:#16a34a}
+.save-btn.need-color{background:#ef4444}
+.section-label{padding:10px 16px 4px;font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em;flex-shrink:0}
+.recent-section{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0}
+
+/* ITEM ROWS */
+.item-group{border-bottom:1px solid #f3f4f6}
+.item-group-header{display:flex;align-items:center;padding:10px 16px 4px;cursor:pointer;background:#fafafa}
+.item-group-header:active{background:#f3f4f6}
+.item-group-left{flex:1;min-width:0;margin-right:10px}
+.item-group-bc{font-size:11px;color:#9ca3af;font-family:monospace}
+.item-group-name{font-size:14px;font-weight:700;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item-group-size{font-size:11px;color:#2563eb;font-weight:600}
+.item-group-price{font-size:12px;color:#6b7280}
+.item-group-total{font-size:20px;font-weight:700;color:#1a1a1a;min-width:36px;text-align:right}
+.color-rows{padding:0 16px 8px 32px}
+.color-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid #f9fafb;cursor:pointer}
+.color-row:last-child{border-bottom:none}
+.color-row:active{opacity:0.7}
+.color-row-dot{width:16px;height:16px;border-radius:50%;border:1.5px solid rgba(0,0,0,0.1);flex-shrink:0}
+.color-row-name{flex:1;font-size:13px;font-weight:600;color:#374151}
+.color-row-code{font-size:11px;color:#9ca3af;font-family:monospace}
+.color-row-qty{font-size:18px;font-weight:700;color:#1a1a1a;min-width:28px;text-align:right}
+.color-row-edit{font-size:18px;color:#9ca3af;padding:0 4px}
+.add-color-btn{display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;color:#2563eb;font-size:13px;font-weight:600}
+
+.empty-state{padding:48px 24px;text-align:center;color:#9ca3af;font-size:14px;line-height:1.6}
+.footer-bar{background:#fafafa;border-top:1px solid #e5e5e5;padding:10px 16px;padding-bottom:max(10px,env(safe-area-inset-bottom));display:flex;flex-shrink:0}
+.stat{flex:1;text-align:center}
+.stat-val{font-size:22px;font-weight:700;color:#1a1a1a;line-height:1}
+.stat-lbl{font-size:10px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-top:2px}
+.stat-div{width:1px;background:#e5e5e5;margin:4px 0}
+.search-bar{padding:10px 16px;border-bottom:1px solid #e5e5e5;flex-shrink:0;display:flex;gap:8px;align-items:center}
+.search-input{flex:1;height:42px;font-size:15px;padding:0 14px;border:2px solid #e5e5e5;border-radius:10px;background:#fafafa;color:#1a1a1a;outline:none;-webkit-appearance:none}
+.search-input:focus{border-color:#1a1a1a;background:#fff}
+.filter-btn{height:42px;padding:0 12px;border-radius:10px;border:2px solid #e5e5e5;background:#fff;color:#1a1a1a;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;-webkit-appearance:none;flex-shrink:0}
+.filter-btn.active-filter{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.scrollable-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0}
+.edit-panel{background:#f8fafc;border-bottom:1px solid #e5e5e5;padding:14px 16px;flex-shrink:0}
+.edit-panel-title{font-size:13px;font-weight:700;color:#111;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.edit-panel-size{font-size:11px;color:#2563eb;font-weight:600;margin-bottom:2px}
+.edit-panel-bc{font-size:11px;color:#6b7280;font-family:monospace;margin-bottom:8px}
+.edit-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.edit-row:last-child{margin-bottom:0}
+.edit-label{font-size:12px;color:#6b7280;font-weight:600;width:42px;flex-shrink:0}
+.edit-qty-btn{width:44px;height:44px;border-radius:10px;border:2px solid #e5e5e5;background:#fff;font-size:22px;color:#1a1a1a;cursor:pointer;flex-shrink:0;-webkit-appearance:none}
+.edit-qty-btn:active{background:#f3f4f6}
+.edit-qty-input{width:68px;height:44px;border-radius:10px;border:2px solid #e5e5e5;background:#fff;font-size:18px;font-weight:700;text-align:center;color:#1a1a1a;outline:none;-webkit-appearance:none}
+.edit-qty-input:focus{border-color:#1a1a1a}
+.edit-save-btn{flex:1;height:44px;border-radius:10px;border:none;background:#1a1a1a;color:#fff;font-size:13px;font-weight:700;cursor:pointer;-webkit-appearance:none}
+.edit-save-btn:active{opacity:0.8}
+.edit-save-btn.saved{background:#16a34a}
+.edit-close-btn{width:44px;height:44px;border-radius:10px;border:2px solid #e5e5e5;background:#fff;color:#6b7280;font-size:18px;cursor:pointer;flex-shrink:0;-webkit-appearance:none}
+.edit-close-btn:active{background:#f3f4f6}
+.edit-color-display{flex:1;height:44px;border-radius:10px;border:2px solid #e5e5e5;background:#fafafa;padding:0 12px;display:flex;align-items:center;gap:10px;cursor:pointer}
+.edit-color-display:active{background:#f3f4f6}
+.edit-color-dot{width:22px;height:22px;border-radius:50%;border:1.5px solid rgba(0,0,0,0.12);flex-shrink:0}
+.edit-color-name{font-size:13px;font-weight:600;color:#374151;flex:1}
+.hist-toolbar{display:flex;gap:8px;padding:10px 16px;border-bottom:1px solid #e5e5e5;flex-shrink:0}
+.hist-search{flex:1;height:42px;font-size:15px;padding:0 14px;border:2px solid #e5e5e5;border-radius:10px;background:#fafafa;color:#1a1a1a;outline:none;-webkit-appearance:none}
+.hist-search:focus{border-color:#1a1a1a}
+.export-btn{height:42px;padding:0 14px;border-radius:10px;border:2px solid #e5e5e5;background:#fff;color:#1a1a1a;font-size:13px;font-weight:700;cursor:pointer;-webkit-appearance:none;white-space:nowrap}
+.export-btn:active{background:#f3f4f6}
+.hist-row{padding:12px 16px;border-bottom:1px solid #f3f4f6}
+.hist-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2px}
+.hist-name{font-size:13px;font-weight:700;color:#111;flex:1;min-width:0;margin-right:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hist-time{font-size:11px;color:#9ca3af;white-space:nowrap;flex-shrink:0}
+.hist-bc{font-size:11px;color:#9ca3af;font-family:monospace;margin-bottom:3px}
+.hist-color{display:flex;align-items:center;gap:5px;margin-bottom:3px}
+.hist-color-dot{width:10px;height:10px;border-radius:50%;border:1px solid rgba(0,0,0,0.1)}
+.hist-color-name{font-size:11px;font-weight:600;color:#7c3aed}
+.hist-detail{font-size:13px;color:#6b7280;display:flex;align-items:center;gap:8px}
+.badge{padding:3px 9px;border-radius:99px;font-size:11px;font-weight:700}
+.badge.scan{background:#dcfce7;color:#166534}
+.badge.inc{background:#dbeafe;color:#1e40af}
+.badge.dec{background:#fee2e2;color:#991b1b}
+.badge.set{background:#fef3c7;color:#92400e}
+
+/* COLOUR PICKER */
+.color-picker-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+.color-picker-box{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:520px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden}
+.color-picker-hdr{display:flex;justify-content:space-between;align-items:center;padding:16px 18px 10px;border-bottom:1px solid #f3f4f6;flex-shrink:0}
+.color-picker-hdr span{font-size:15px;font-weight:700;color:#1a1a1a}
+.color-picker-hdr button{width:32px;height:32px;border-radius:50%;border:none;background:#f3f4f6;color:#6b7280;font-size:14px;cursor:pointer}
+.color-clear-btn{height:36px;padding:0 16px;border-radius:8px;border:1.5px solid #e5e5e5;background:#fff;color:#dc2626;font-size:13px;font-weight:600;cursor:pointer;margin:8px 16px 4px;display:block}
+/* Add new colour form */
+.add-new-color-btn{width:100%;height:40px;border-radius:10px;border:1.5px dashed #d1d5db;background:#fafafa;color:#2563eb;font-size:13px;font-weight:700;cursor:pointer;text-align:left;padding:0 14px;-webkit-appearance:none}
+.add-new-color-btn:active{background:#eff6ff}
+.add-color-form{background:#f8fafc;border-radius:10px;border:1.5px solid #e5e5e5;padding:12px;margin-top:8px}
+.add-color-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.add-color-row:last-child{margin-bottom:0}
+.add-color-lbl{font-size:12px;font-weight:700;color:#6b7280;width:60px;flex-shrink:0}
+.add-color-name-inp{flex:1;height:40px;border-radius:8px;border:1.5px solid #e5e5e5;background:#fff;font-size:14px;padding:0 12px;color:#1a1a1a;outline:none;-webkit-appearance:none}
+.add-color-name-inp:focus{border-color:#1a1a1a}
+.add-color-select{flex:1;height:40px;border-radius:8px;border:1.5px solid #e5e5e5;background:#fff;font-size:13px;padding:0 10px;color:#1a1a1a;outline:none;-webkit-appearance:none}
+.native-color-picker{width:44px;height:40px;border-radius:8px;border:1.5px solid #e5e5e5;padding:2px;cursor:pointer;-webkit-appearance:none;flex-shrink:0}
+.add-color-hex-inp{flex:1;height:40px;border-radius:8px;border:1.5px solid #e5e5e5;background:#fff;font-size:14px;font-family:monospace;padding:0 12px;color:#1a1a1a;outline:none;-webkit-appearance:none;text-transform:uppercase}
+.add-color-hex-inp:focus{border-color:#1a1a1a}
+.add-color-save-btn{width:100%;height:44px;border-radius:10px;border:none;background:#1a1a1a;color:#fff;font-size:14px;font-weight:700;cursor:pointer;margin-top:4px;-webkit-appearance:none}
+.add-color-save-btn:active{opacity:0.8}
+.color-picker-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px 16px 24px}
+.color-family{margin-bottom:14px}
+.color-family-title{font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;padding-top:4px}
+.color-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.color-swatch{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:6px 4px;border-radius:10px;border:2px solid transparent;transition:border-color 0.15s}
+.color-swatch:active,.color-swatch.selected{border-color:#1a1a1a;background:#f9fafb}
+.swatch-dot{width:36px;height:36px;border-radius:50%}
+.swatch-lbl{font-size:10px;font-weight:700;color:#374151;font-family:monospace}
+.swatch-name{font-size:9px;color:#9ca3af;text-align:center;line-height:1.2}
+
+/* IMPORT */
+.import-wrap{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px 16px 80px}
+.import-card{border-radius:14px;border:2px dashed #d1d5db;background:#fafafa;padding:28px 20px;text-align:center;margin-bottom:16px;cursor:pointer}
+.import-card:active{border-color:#1a1a1a;background:#f0fdf4}
+.import-icon{font-size:36px;margin-bottom:8px}
+.import-title{font-size:15px;font-weight:700;color:#111;margin-bottom:4px}
+.import-sub{font-size:13px;color:#6b7280;margin-bottom:14px;line-height:1.5}
+.import-file-btn{display:inline-block;padding:10px 24px;background:#1a1a1a;color:#fff;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer}
+.import-file-input{display:none}
+.import-rules{background:#f8fafc;border-radius:12px;border:1.5px solid #e5e5e5;padding:12px 14px;margin-bottom:14px}
+.import-rules-title{font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px}
+.import-rule{font-size:13px;color:#4b5563;padding:2px 0;display:flex;gap:8px}
+.import-preview{background:#fff;border-radius:12px;border:1.5px solid #86efac;padding:12px 14px;margin-bottom:12px;display:none}
+.import-preview-title{font-size:13px;font-weight:700;color:#166534;margin-bottom:6px}
+.import-stat{display:flex;justify-content:space-between;font-size:13px;color:#374151;padding:3px 0;border-bottom:1px solid #f3f4f6}
+.import-stat:last-child{border-bottom:none}
+.import-stat-val{font-weight:700;color:#1a1a1a}
+.import-confirm-btn{width:100%;height:48px;border-radius:12px;border:none;background:#16a34a;color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px;display:none}
+.import-confirm-btn.ready{display:block}
+.import-log{background:#f8fafc;border-radius:12px;border:1.5px solid #e5e5e5;padding:10px 14px;margin-top:10px;display:none;max-height:180px;overflow-y:auto}
+.import-log-row{font-size:12px;color:#6b7280;font-family:monospace;padding:2px 0}
+.import-log-row.added{color:#16a34a}
+
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a1a1a;color:#fff;font-size:13px;font-weight:600;padding:10px 20px;border-radius:99px;opacity:0;transition:all 0.25s;pointer-events:none;z-index:100;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── LOCK SCREEN ── */
+.lock-screen{position:fixed;inset:0;background:#1a1a1a;z-index:999;display:flex;align-items:center;justify-content:center;padding:24px}
+.lock-screen.unlocking{animation:unlock-fade 0.4s ease forwards}
+@keyframes unlock-fade{to{opacity:0;transform:scale(1.05)}}
+.lock-box{width:100%;max-width:320px;text-align:center}
+.lock-icon{font-size:48px;margin-bottom:12px}
+.lock-branch{font-size:13px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px}
+.lock-title{font-size:24px;font-weight:700;color:#fff;margin-bottom:4px}
+.lock-subtitle{font-size:14px;color:#6b7280;margin-bottom:28px}
+.lock-dots{display:flex;justify-content:center;gap:16px;margin-bottom:14px}
+.lock-dot{width:16px;height:16px;border-radius:50%;border:2px solid #4b5563;background:transparent;transition:all 0.15s}
+.lock-dot.filled{background:#fff;border-color:#fff}
+.lock-error{height:24px;font-size:13px;color:#ef4444;font-weight:600;margin-bottom:16px;transition:all 0.2s}
+.lock-error.shake{animation:shake 0.4s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.lock-lockout{font-size:13px;color:#f59e0b;margin-bottom:16px;line-height:1.5}
+.lock-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:260px;margin:0 auto}
+.lock-key{height:64px;border-radius:14px;border:none;background:#2d2d2d;color:#fff;font-size:22px;font-weight:600;cursor:pointer;-webkit-appearance:none;transition:background 0.1s}
+.lock-key:active{background:#404040}
+.lock-key.empty{background:transparent;cursor:default;pointer-events:none}
+/* READ-ONLY BANNER */
+.readonly-banner{background:#fef3c7;border-bottom:2px solid #fbbf24;padding:8px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:12px}
+.readonly-banner span{font-size:13px;font-weight:700;color:#92400e}
+.unlock-btn{height:34px;padding:0 14px;border-radius:8px;border:none;background:#d97706;color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.unlock-btn:active{opacity:0.8}
+/* PIN PROMPT OVERLAY */
+.pin-prompt-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:300;display:flex;align-items:center;justify-content:center;padding:24px}
+.pin-prompt-overlay.unlocking{animation:unlock-fade 0.3s ease forwards}
+.pin-prompt-box{background:#1a1a1a;border-radius:20px;padding:28px 24px;width:100%;max-width:300px;text-align:center}
+
+/* BACKUP REMINDER BAR */
+.backup-reminder{position:fixed;bottom:0;left:0;right:0;max-width:520px;margin:0 auto;background:#1a1a1a;color:#fff;z-index:150;border-radius:16px 16px 0 0;padding:12px 16px;padding-bottom:max(12px,env(safe-area-inset-bottom));box-shadow:0 -4px 20px rgba(0,0,0,0.3)}
+.backup-reminder-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:13px;font-weight:700}
+.backup-reminder-top button{width:28px;height:28px;border-radius:50%;border:none;background:rgba(255,255,255,0.15);color:#fff;font-size:14px;cursor:pointer}
+.backup-reminder-btns{display:flex;gap:8px}
+.backup-reminder-btns button{flex:1;height:40px;border-radius:10px;border:none;background:rgba(255,255,255,0.12);color:#fff;font-size:12px;font-weight:700;cursor:pointer;-webkit-appearance:none}
+.backup-reminder-btns button:active{background:rgba(255,255,255,0.2)}
+
+/* RECOVERY BANNER */
+.recovery-banner{background:#fef3c7;border-bottom:2px solid #fbbf24;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.recovery-icon{font-size:24px;flex-shrink:0}
+.recovery-msg{flex:1;font-size:13px;color:#92400e;line-height:1.4}
+.recovery-btns{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+.recovery-btn-yes{height:36px;padding:0 14px;border-radius:8px;border:none;background:#d97706;color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.recovery-btn-no{height:36px;padding:0 14px;border-radius:8px;border:1.5px solid #fbbf24;background:transparent;color:#92400e;font-size:12px;font-weight:600;cursor:pointer}
+
+/* BACKUP / SYNC MODAL */
+.backup-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+.backup-modal{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:520px;max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 0 max(24px,env(safe-area-inset-bottom))}
+.backup-modal-hdr{display:flex;justify-content:space-between;align-items:center;padding:18px 18px 14px;border-bottom:1px solid #f3f4f6;position:sticky;top:0;background:#fff;z-index:1}
+.backup-modal-hdr span{font-size:16px;font-weight:700;color:#1a1a1a}
+.backup-modal-hdr button{width:32px;height:32px;border-radius:50%;border:none;background:#f3f4f6;color:#6b7280;font-size:14px;cursor:pointer}
+.backup-section{padding:16px 18px;border-bottom:1px solid #f3f4f6}
+.backup-section-title{font-size:13px;font-weight:700;color:#1a1a1a;margin-bottom:4px}
+.backup-section-desc{font-size:12px;color:#6b7280;margin-bottom:12px;line-height:1.5}
+.backup-pin-display{background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:10px 14px;font-size:13px;color:#166534;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.backup-pin-display button{height:30px;padding:0 10px;border-radius:6px;border:1.5px solid #86efac;background:#fff;color:#166534;font-size:12px;font-weight:600;cursor:pointer}
+.backup-action-btn{height:44px;padding:0 16px;border-radius:10px;border:1.5px solid #e5e5e5;background:#fff;color:#1a1a1a;font-size:13px;font-weight:700;cursor:pointer;-webkit-appearance:none;flex:1}
+.backup-action-btn:active{background:#f3f4f6}
+.backup-action-btn.primary{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.backup-action-btn.primary:active{opacity:0.8}
+.backup-code-textarea{width:100%;height:100px;border-radius:10px;border:1.5px solid #e5e5e5;background:#fafafa;font-size:11px;font-family:monospace;padding:10px;color:#374151;resize:none;outline:none;margin-bottom:8px;-webkit-appearance:none}
+.backup-code-textarea:focus{border-color:#1a1a1a}
+.reset-pin-btn{width:100%;height:40px;margin-top:10px;border-radius:10px;border:1.5px dashed #e5e5e5;background:transparent;color:#9ca3af;font-size:12px;font-weight:600;cursor:pointer;-webkit-appearance:none}
+.reset-pin-btn:active{background:#fef2f2;color:#dc2626;border-color:#fca5a5}
+/* ADD ITEM */
+.add-item-fab{width:42px;height:42px;border-radius:10px;border:none;background:#1a1a1a;color:#fff;font-size:22px;font-weight:300;cursor:pointer;flex-shrink:0;-webkit-appearance:none;display:flex;align-items:center;justify-content:center}
+.add-item-fab:active{opacity:0.8}
+.add-item-row{margin-bottom:12px}
+.add-item-lbl{display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:5px}
+.add-item-inp{width:100%;height:44px;border-radius:10px;border:2px solid #e5e5e5;background:#fafafa;font-size:15px;padding:0 14px;color:#1a1a1a;outline:none;-webkit-appearance:none;box-sizing:border-box}
+.add-item-inp:focus{border-color:#1a1a1a;background:#fff}
+.add-item-hint{font-size:12px;margin-top:4px;font-weight:600;min-height:18px}
+.add-item-hint.warn{color:#d97706}
+.add-item-hint.ok{color:#16a34a}
+.api-key-warning{background:#fef3c7;border:1.5px solid #fbbf24;border-radius:8px;padding:8px 12px;font-size:12px;color:#92400e;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.api-key-setup-btn{height:28px;padding:0 12px;border-radius:6px;border:none;background:#d97706;color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
+/* Backup bar */
+.backup-bar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;background:#1a1a1a;color:#fff;padding:10px 14px;padding-bottom:max(10px,env(safe-area-inset-bottom));display:flex;align-items:center;justify-content:space-between;z-index:150;gap:8px}
+.backup-bar-msg{font-size:12px;font-weight:600;color:#fbbf24;flex:1}
+.backup-bar-btns{display:flex;gap:6px;align-items:center}
+.backup-bar-btn{height:34px;padding:0 12px;border-radius:8px;border:none;font-size:12px;font-weight:700;cursor:pointer;-webkit-appearance:none}
+.backup-bar-btn.cloud{background:#2563eb;color:#fff}
+.backup-bar-btn.excel{background:#16a34a;color:#fff}
+.backup-bar-dismiss{width:28px;height:28px;border-radius:50%;border:none;background:rgba(255,255,255,0.15);color:#fff;font-size:12px;cursor:pointer;flex-shrink:0}
+/* ── Sales / Transfer Tab ── */
+.sales-header{padding:10px 16px 0;flex-shrink:0}
+.sales-type-row{display:flex;gap:8px;margin-bottom:2px}
+.sales-type-btn{flex:1;height:38px;border-radius:10px;border:2px solid #e5e7eb;background:#f9fafb;font-size:13px;font-weight:600;cursor:pointer;color:#374151}
+.sales-type-btn.active{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.sales-scan-wrap{padding:10px 16px 6px;flex-shrink:0}
+.sales-scan-row{display:flex;gap:8px}
+.sales-enter-btn{width:44px;height:44px;border-radius:10px;border:none;background:#1a1a1a;color:#fff;font-size:20px;cursor:pointer;flex-shrink:0}
+.sales-item-card{background:#fff;margin:0 12px;border-radius:14px;border:1.5px solid #e5e7eb;padding:14px;flex-shrink:0}
+.sales-item-info{margin-bottom:10px}
+.sales-item-name{font-size:14px;font-weight:700;color:#111;line-height:1.3}
+.sales-item-meta{font-size:12px;color:#6b7280;margin-top:2px}
+.sales-color-row{display:flex;gap:8px;margin-bottom:8px}
+.sales-color-preview{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px;font-weight:600;padding:6px 10px;background:#f3f4f6;border-radius:8px}
+.sales-balance-row{display:flex;align-items:center;gap:6px;background:#eff6ff;border-radius:8px;padding:7px 10px;margin-bottom:8px;font-size:12px;flex-wrap:wrap}
+.balance-label{color:#3b82f6;font-weight:600}
+.balance-qty{font-size:16px;font-weight:800;color:#1d4ed8;margin-right:8px}
+.balance-after-label{color:#6b7280}
+.balance-after{font-size:16px;font-weight:800;color:#059669}
+.balance-after.negative{color:#dc2626}
+.sales-dest-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.sales-dest-label{font-size:12px;font-weight:600;color:#374151;white-space:nowrap}
+.sales-dest-select{flex:1;height:36px;border-radius:8px;border:1.5px solid #d1d5db;padding:0 8px;font-size:13px;background:#fff}
+.sales-notes-row{margin-bottom:8px}
+.sales-notes-input{width:100%;height:36px;border-radius:8px;border:1.5px solid #d1d5db;padding:0 10px;font-size:13px;box-sizing:border-box}
+.sales-qty-row{display:flex;align-items:center;gap:12px;justify-content:center;margin-top:4px}
+.sales-log-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 4px;font-size:12px;font-weight:700;color:#374151;flex-shrink:0}
+.sales-log-list{flex:1;overflow-y:auto;padding:0 12px 16px}
+.sales-log-item{background:#fff;border-radius:10px;border:1px solid #e5e7eb;padding:10px 12px;margin-bottom:8px}
+.sales-log-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.sales-log-type{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px}
+.sales-log-type.sale{background:#fef9c3;color:#854d0e}
+.sales-log-type.transfer{background:#dbeafe;color:#1e40af}
+.sales-log-qty{font-size:16px;font-weight:800;color:#dc2626}
+.sales-log-name{font-size:13px;font-weight:600;color:#111;margin-bottom:2px}
+.sales-log-meta{font-size:11px;color:#6b7280}
+.sales-log-ts{font-size:10px;color:#9ca3af;margin-top:3px}
+
+/* ── Mode banner ── */
+.mode-banner{display:flex;align-items:center;justify-content:center;gap:8px;padding:6px 16px;font-size:12px;font-weight:800;letter-spacing:0.04em;flex-shrink:0;text-transform:uppercase}
+.mode-banner.mode-count{background:#dcfce7;color:#14532d;border-bottom:2px solid #86efac}
+.mode-banner.mode-sales{background:#fee2e2;color:#7f1d1d;border-bottom:2px solid #fca5a5}
+.mode-banner.mode-transfer{background:#dbeafe;color:#1e3a8a;border-bottom:2px solid #93c5fd}
+
+/* ── Homepage / Mode Selector ── */
+.homepage{position:fixed;inset:0;z-index:500;display:flex;flex-direction:column;background:#111;overflow:hidden}
+.homepage.hidden{display:none}
+.home-top{padding:36px 24px 20px;text-align:center;flex-shrink:0}
+.home-branch{font-size:13px;font-weight:700;letter-spacing:0.12em;color:#9ca3af;text-transform:uppercase;margin-bottom:6px}
+.home-title{font-size:26px;font-weight:900;color:#fff;line-height:1.15;margin-bottom:4px}
+.home-subtitle{font-size:13px;color:#6b7280}
+.home-cards{flex:1;display:flex;flex-direction:column;gap:14px;padding:8px 20px 32px;justify-content:center}
+.home-card{border-radius:20px;padding:28px 24px;display:flex;align-items:center;gap:18px;cursor:pointer;border:none;text-align:left;width:100%;position:relative;overflow:hidden;flex-shrink:0}
+.home-card:active{transform:scale(0.97);transition:transform 0.1s}
+.home-card.card-count{background:linear-gradient(135deg,#14532d 0%,#16a34a 100%)}
+.home-card.card-sale{background:linear-gradient(135deg,#7f1d1d 0%,#dc2626 100%)}
+.home-card.card-transfer{background:linear-gradient(135deg,#1e3a8a 0%,#2563eb 100%)}
+.home-card-icon{font-size:40px;flex-shrink:0;line-height:1}
+.home-card-text{flex:1}
+.home-card-title{font-size:20px;font-weight:800;color:#fff;margin-bottom:4px}
+.home-card-desc{font-size:13px;color:rgba(255,255,255,0.75);line-height:1.4}
+.home-card-arrow{font-size:22px;color:rgba(255,255,255,0.5);flex-shrink:0}
+.home-footer{padding:0 20px 24px;text-align:center;flex-shrink:0}
+.home-footer-btn{background:none;border:1px solid #374151;color:#6b7280;font-size:12px;padding:8px 18px;border-radius:20px;cursor:pointer}
+.home-footer-btn:active{background:#1f2937}
+</style>
+</head>
+<body>
+<div class="homepage" id="homepage">
+  <div class="home-top">
+    <div class="home-branch" id="home-branch-name">GOMBAK</div>
+    <div class="home-title">Stok 2026</div>
+    <div class="home-subtitle">Pilih mod untuk mula</div>
+  </div>
+  <div class="home-cards">
+    <button class="home-card card-count" onclick="selectHomeMode('scan')">
+      <span class="home-card-icon">&#9650;</span>
+      <div class="home-card-text">
+        <div class="home-card-title">Kiraan Stok</div>
+        <div class="home-card-desc">Tambah kuantiti semasa kiraan inventori</div>
+      </div>
+      <span class="home-card-arrow">›</span>
+    </button>
+    <button class="home-card card-sale" onclick="selectHomeMode('sale')">
+      <span class="home-card-icon">&#128178;</span>
+      <div class="home-card-text">
+        <div class="home-card-title">Jualan</div>
+        <div class="home-card-desc">Tolak stok yang telah dijual</div>
+      </div>
+      <span class="home-card-arrow">›</span>
+    </button>
+    <button class="home-card card-transfer" onclick="selectHomeMode('transfer')">
+      <span class="home-card-icon">&#8644;</span>
+      <div class="home-card-text">
+        <div class="home-card-title">Pindahan</div>
+        <div class="home-card-desc">Pindah stok ke cawangan lain</div>
+      </div>
+      <span class="home-card-arrow">›</span>
+    </button>
+  </div>
+  <div class="home-footer">
+    <button class="home-footer-btn" onclick="dismissHomepage()">&#9783; Lihat Semua Tab</button>
+  </div>
+</div>
+
+<div class="app">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">Gombak Stocktake</div>
+      <div class="topbar-sub" id="topbar-date"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div id="cloud-status" style="font-size:11px;color:#888"></div>
+      <div style="display:flex;align-items:center;gap:8px">
+      <div style="font-size:11px;color:#888;text-align:right" id="sync-lbl"></div>
+      <button onclick="openChangePinModal()" style="height:32px;padding:0 10px;border-radius:8px;border:none;background:rgba(255,255,255,0.12);color:#fff;font-size:12px;font-weight:700;cursor:pointer">&#128274; PIN</button>
+      <button onclick="openBackupModal()" style="height:32px;padding:0 10px;border-radius:8px;border:none;background:rgba(255,255,255,0.12);color:#fff;font-size:12px;font-weight:700;cursor:pointer">&#9729; Backup</button>
+    </div>
+    </div>
+  </div>
+  <div class="tab-row">
+    <button class="tab active" onclick="switchTab('scan')">&#9647;<br>Scan</button>
+    <button class="tab" onclick="switchTab('inventory')">&#9783;<br>Inventory</button>
+    <button class="tab" onclick="switchTab('counted')">&#10003;<br>Counted</button>
+    <button class="tab" onclick="switchTab('history')">&#10710;<br>History</button>
+    <button class="tab" onclick="switchTab('import')">&#8659;<br>Import</button>
+    <button class="tab" onclick="switchTab('sales')">&#8644;<br>Jualan</button>
+  </div>
+
+  <div id="mode-banner" class="mode-banner mode-count">&#9650; MOD KIRAAN STOK</div>
+
+  <div class="screen active" id="tab-scan">
+    <div class="scan-input-wrap">
+      <input type="text" class="scan-field" id="barcode-input"
+        placeholder="Scan atau taip barcode..."
+        autocomplete="off" autocorrect="off" autocapitalize="off"
+        spellcheck="false" inputmode="text"/>
+    </div>
+    <div class="result-area" id="result-area"></div>
+    <div class="section-label">Baru discan</div>
+    <div class="recent-section" id="recent-section">
+      <div class="empty-state">Belum ada scan<br>Scan barcode kat atas untuk mula</div>
+    </div>
+    <div class="footer-bar">
+      <div class="stat"><div class="stat-val" id="s-total">0</div><div class="stat-lbl">Pieces</div></div>
+      <div class="stat-div"></div>
+      <div class="stat"><div class="stat-val" id="s-skus">0</div><div class="stat-lbl">SKUs</div></div>
+      <div class="stat-div"></div>
+      <div class="stat"><div class="stat-val" id="s-colors">0</div><div class="stat-lbl">Colour Lines</div></div>
+    </div>
+  </div>
+
+  <div class="screen" id="tab-inventory">
+    <div class="search-bar">
+      <input type="search" class="search-input" id="inv-search"
+        placeholder="Cari item..." oninput="renderInventory()"/>
+      <button class="filter-btn" id="inv-filter-btn" onclick="toggleInvFilter()">Counted</button>
+      <button class="add-item-fab" onclick="openAddItemModal()" title="Tambah Item Baru">&#43;</button>
+    </div>
+    <div class="scrollable-list" id="inv-list"><div class="empty-state">Memuatkan...</div></div>
+  </div>
+
+  <div class="screen" id="tab-counted">
+    <div class="search-bar">
+      <input type="search" class="search-input" id="counted-search"
+        placeholder="Cari item yang dah dikira..." oninput="renderCounted()"/>
+    </div>
+    <div class="scrollable-list" id="counted-list"><div class="empty-state">Belum ada item dikira</div></div>
+  </div>
+
+  <div class="screen" id="tab-history">
+    <div class="hist-toolbar">
+      <input type="search" class="hist-search" id="hist-search"
+        placeholder="Filter history..." oninput="renderHistory()"/>
+      <button class="export-btn" onclick="cloudBackup()" title="Backup ke cloud">&#9729;</button>
+      <button class="export-btn" onclick="cloudRestore()" title="Pulihkan dari cloud">&#8635;</button>
+      <button class="export-btn" onclick="backupExportXLSX()">&#8659; Excel</button>
+      <button class="export-btn" onclick="exportCSV()">&#8659; CSV</button>
+    </div>
+    <div class="scrollable-list" id="hist-list"><div class="empty-state">Belum ada perubahan direkod</div></div>
+  </div>
+
+  <div class="screen" id="tab-import">
+    <div class="import-wrap">
+      <div class="import-card" id="import-drop-zone"
+           onclick="document.getElementById('import-file-input').click()"
+           ondragover="handleDragOver(event)" ondragleave="handleDragLeave()"
+           ondrop="handleDrop(event)">
+        <div class="import-icon">&#128194;</div>
+        <div class="import-title">Import Inventory Baru</div>
+        <div class="import-sub">Drag &amp; drop fail Excel atau CSV,<br>atau tekan butang di bawah</div>
+        <div class="import-file-btn">Pilih Fail</div>
+        <input type="file" class="import-file-input" id="import-file-input"
+               accept=".xlsx,.xls,.csv" onchange="handleFileSelect(event)"/>
+      </div>
+      <div class="import-rules">
+        <div class="import-rules-title">Format Diterima</div>
+        <div class="import-rule"><span>&#9989;</span><span><b>Stocktake Export</b> — fail Excel dari app ini. Count &amp; warna akan dipulihkan secara automatik.</span></div>
+        <div class="import-rule"><span>&#9989;</span><span><b>Inventory List</b> — Excel/CSV dengan kolum: Barcode, Description, Size, Price</span></div>
+        <div class="import-rule"><span>&#8505;&#65039;</span><span>App akan kesan jenis fail secara automatik</span></div>
+        <div class="import-rule"><span>&#8505;&#65039;</span><span>Data sedia ada akan digabungkan, bukan dipadam</span></div>
+      </div>
+      <div class="import-preview" id="import-preview">
+        <div class="import-preview-title">&#128203; Preview Import</div>
+        <div class="import-stat"><span>Fail</span><span class="import-stat-val" id="prev-filename">&#8212;</span></div>
+        <div class="import-stat"><span>Jenis fail</span><span class="import-stat-val" id="prev-type" style="font-size:12px">&#8212;</span></div>
+        <div class="import-stat"><span>Jumlah item</span><span class="import-stat-val" id="prev-total">&#8212;</span></div>
+        <div class="import-stat"><span>Item baru / Count</span><span class="import-stat-val" id="prev-new">&#8212;</span></div>
+        <div class="import-stat"><span>Dikemaskini / Warna</span><span class="import-stat-val" id="prev-updated">&#8212;</span></div>
+        <div class="import-stat"><span>Tiada perubahan / Inv baru</span><span class="import-stat-val" id="prev-same">&#8212;</span></div>
+        <button class="import-confirm-btn" id="import-confirm-btn" onclick="confirmImport()">Sahkan &amp; Import</button>
+      </div>
+      <div class="import-log" id="import-log"></div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>window.STORAGE_KEY='gombak';window.BRANCH_SLUG='gombak';</script>
+<script src="./inventory.js"></script>
+<script src="./color_codes.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="./app.js"></script>
+</body>
+</html
+  <!-- ═══════════════════════════════ SALES / TRANSFER TAB ═══════════════════ -->
+  <div class="screen" id="tab-sales">
+    <div class="sales-header">
+      <div class="sales-type-row">
+        <button class="sales-type-btn active" id="type-btn-sale" onclick="setSalesType('sale')">💸 Jualan</button>
+        <button class="sales-type-btn" id="type-btn-transfer" onclick="setSalesType('transfer')">🔀 Pindah</button>
+      </div>
+    </div>
+
+    <!-- Scan/Type Barcode -->
+    <div class="sales-scan-wrap">
+      <div class="sales-scan-row">
+        <input type="text" id="sales-bc-input" class="scan-field" placeholder="Imbas atau taip barkod…" autocomplete="off" spellcheck="false" oninput="onSalesBcInput(this.value)" onkeydown="if(event.key==='Enter')onSalesBcEnter()">
+        <button class="sales-enter-btn" onclick="onSalesBcEnter()">↵</button>
+      </div>
+    </div>
+
+    <!-- Item card (shown after barcode lookup) -->
+    <div id="sales-item-card" class="sales-item-card" style="display:none">
+      <div class="sales-item-info">
+        <div class="sales-item-name" id="sales-item-name">—</div>
+        <div class="sales-item-meta" id="sales-item-meta"></div>
+      </div>
+      <!-- Colour selector row -->
+      <div class="sales-color-row" id="sales-color-row">
+        <button class="color-pick-btn" id="sales-color-btn" onclick="pickSalesColor()">&#9698; Warna</button>
+        <button class="no-color-btn" id="sales-nocolor-btn" onclick="setSalesNoColor()">Tiada Warna</button>
+      </div>
+      <div id="sales-color-preview" class="sales-color-preview" style="display:none"></div>
+
+      <!-- Stock balance row -->
+      <div class="sales-balance-row" id="sales-balance-row" style="display:none">
+        <span class="balance-label">Stok Dikira:</span>
+        <span class="balance-qty" id="sales-balance-qty">0</span>
+        <span class="balance-after-label">Baki Selepas:</span>
+        <span class="balance-after" id="sales-balance-after">0</span>
+      </div>
+
+      <!-- Transfer destination (only when type=transfer) -->
+      <div id="sales-dest-row" class="sales-dest-row" style="display:none">
+        <label class="sales-dest-label">Pindah Ke:</label>
+        <select id="sales-dest-select" class="sales-dest-select">
+          <option value="">— Pilih Cawangan —</option>
+          <option value="KG Baru">KG Baru</option>
+          <option value="Gombak">Gombak</option>
+          <option value="MM">MM</option>
+          <option value="Shaft">Shaft</option>
+          <option value="TTDI">TTDI</option>
+          <option value="Wisma Yakin">Wisma Yakin</option>
+        </select>
+      </div>
+
+      <!-- Notes -->
+      <div class="sales-notes-row">
+        <input type="text" id="sales-notes" class="sales-notes-input" placeholder="Nota (pilihan)…" autocomplete="off">
+      </div>
+
+      <!-- Qty row -->
+      <div class="sales-qty-row">
+        <button class="qty-btn" onclick="adjSalesQty(-1)">−</button>
+        <input type="number" id="sales-qty" class="qty-input" value="1" min="1" oninput="onSalesQtyInput()">
+        <button class="qty-btn" onclick="adjSalesQty(1)">+</button>
+      </div>
+
+      <!-- Save button -->
+      <button class="save-btn" id="sales-save-btn" onclick="saveSalesEntry()" style="margin:12px 16px 0;width:calc(100% - 32px)">Simpan Dedukt</button>
+    </div>
+
+    <!-- Sales log list -->
+    <div class="sales-log-header">
+      <span id="sales-log-title">Log Jualan / Pindahan</span>
+      <button class="export-btn" onclick="exportSalesExcel()" style="font-size:11px;padding:4px 10px">↓ Excel</button>
+    </div>
+    <div id="sales-log-list" class="sales-log-list"></div>
+  </div>
+>
